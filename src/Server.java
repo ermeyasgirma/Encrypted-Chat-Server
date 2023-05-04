@@ -46,6 +46,7 @@ public class Server implements Runnable {
 
     public void closeServer() {
         endChat = true;
+        threadPool.shutdown();
         try {
             if (!chatServer.isClosed()) {
                 chatServer.close();
@@ -81,13 +82,14 @@ public class Server implements Runnable {
                 out = new PrintWriter(client.getOutputStream(), true);
                 // use in to receive messages from the client
                 in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                out.println("Please enter a username, with no names");
+                out.println("Please enter a username, with no spaces:");
                 verifyUsername();
                 nameToConnection.put(username, this);
                 System.out.println(username + " has connected");
                 broadcastMessage(username + " has joined the chat");
                 String message;
                 while ((message = in.readLine()) != null) {
+                    System.out.println("Current message is " + message);
                     if (message.startsWith("/name")) {
                         String[] splitMsg = message.split(" ", 2);
                         if (splitMsg.length != 2) {
@@ -98,10 +100,10 @@ public class Server implements Runnable {
                         nameToConnection.remove(username);
                         nameToConnection.put(username, this);
                         username = splitMsg[1];
-                    } else if (message.startsWith("/exit")) {
-                        closeConnection();
+                    } else if (message.equalsIgnoreCase("/exit")) {
                         System.out.println(username + " has left the chat :((");
                         broadcastMessage(username + " has left the chat :((");
+                        closeConnection();
                         nameToConnection.remove(username);
 
                     } else if (message.startsWith("/pm")) {

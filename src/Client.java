@@ -12,10 +12,14 @@ public class Client implements Runnable {
     private PrintWriter out;
     private Socket socket;
     private boolean closeConnection;
+    private long serverPubKey;
+    private Encrypt encryptor;
 
     public Client() {
         closeConnection = false;
+        encryptor = new Encrypt();
     }
+
 
     public void run() {
         try {
@@ -27,13 +31,17 @@ public class Client implements Runnable {
             Thread t = new Thread(iHandler);
             t.start();
             String msgFromServer;
-            while ((msgFromServer = in.readLine()) != null) {
+            while ((msgFromServer = decrypt(in.readLine())) != null) {
                 System.out.println(msgFromServer);
             }
         } catch (Exception e) {
             close();
         }
 
+    }
+
+    public String decrypt(String s) {
+        return "";
     }
 
     public void close() {
@@ -58,18 +66,28 @@ public class Client implements Runnable {
                 inputReader = new BufferedReader(new InputStreamReader(System.in));
                 while (!closeConnection) {
                     String msg = inputReader.readLine();
-                    if (msg.equals("/exit")) {
-                        out.println("/exit");
+                    if (msg.startsWith("/serverKey:")){
+                        // no need to decrypt or encrypt initial key exchange
+                        String[] msgSplit = msg.split(" ", 2);
+                        serverPubKey = Long.valueOf(msgSplit[1]);
+                        out.println(Long.toString(encryptor.getPublicKey()));
+                    } else if (msg.equals("/exit")) {
+                        out.println(encrypt("/exit"));
                         inputReader.close();
                         close();
                     } else {
-                        out.println(msg);
+                        out.println(encrypt(msg));
                     }
                 }
             } catch (Exception e) {
                 close();
             }
         }
+
+        public String encrypt(String s) {
+            return encryptor.encryptMessage(s, serverPubKey);
+        }
+
         
     }
 

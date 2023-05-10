@@ -1,10 +1,10 @@
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.*;
-import java.nio.Buffer;
+import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 public class Client implements Runnable {
     
@@ -12,12 +12,14 @@ public class Client implements Runnable {
     private PrintWriter out;
     private Socket socket;
     private boolean closeConnection;
-    private long serverPubKey;
+    private PublicKey serverPubKey;
     private Encrypt encryptor;
+    private PublicKey publicKey;
 
     public Client() {
         closeConnection = false;
         encryptor = new Encrypt();
+        publicKey = encryptor.getPublicKey();
     }
 
 
@@ -31,8 +33,20 @@ public class Client implements Runnable {
             Thread t = new Thread(iHandler);
             t.start();
             String msgFromServer;
-            while ((msgFromServer = decrypt(in.readLine())) != null) {
-                System.out.println(msgFromServer);
+
+            while ((msgFromServer = in.readLine()) != null) {
+                String decrypted = decrypt(msgFromServer);
+                if (msgFromServer.startsWith("/serverKey")) {
+                    String stringPublicKey  = in.readLine();
+                    byte[] serverkeyAsArray = Base64.getDecoder().decode(stringPublicKey);
+                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                    serverPubKey = keyFactory.generatePublic(new X509EncodedKeySpec(serverkeyAsArray));
+                    // convert our public key to string then send to server
+                    byte[] keyAsArray = publicKey.getEncoded();
+                    out.println(Base64.getEncoder().encodeToString(keyAsArray));
+                } else {
+                    System.out.println(decrypted);
+                }
             }
         } catch (Exception e) {
             close();
@@ -41,7 +55,7 @@ public class Client implements Runnable {
     }
 
     public String decrypt(String s) {
-        return "";
+        return encryptor.decryptMessage(s);
     }
 
     public void close() {
@@ -61,16 +75,15 @@ public class Client implements Runnable {
 
         private BufferedReader inputReader;
 
+
         public void run () {
             try {
                 inputReader = new BufferedReader(new InputStreamReader(System.in));
+
                 while (!closeConnection) {
                     String msg = inputReader.readLine();
-                    if (msg.startsWith("/serverKey:")){
-                        // no need to decrypt or encrypt initial key exchange
-                        String[] msgSplit = msg.split(" ", 2);
-                        serverPubKey = Long.valueOf(msgSplit[1]);
-                        out.println(Long.toString(encryptor.getPublicKey()));
+                    if (msg.startsWith("/serverKey")){
+                        // receive public key
                     } else if (msg.equals("/exit")) {
                         out.println(encrypt("/exit"));
                         inputReader.close();

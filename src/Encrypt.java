@@ -1,72 +1,75 @@
-import java.math.*;
-import java.util.Random;
+import java.util.Base64;
+import javax.crypto.Cipher;
+import java.security.*;
+
 public class Encrypt {
 
-    private long privateKey;
-    private long p; 
-    private long q;
-    private long k;
-    private long n;
-    private long[] publicKey;
+    private PublicKey publicKey;
+    private PrivateKey privateKey;
 
     public Encrypt() {
-        publicKey = new long[2];
-        generateKeyPair();
-
-    }
-
-    public String encryptMessage(String plainText, long[] recipientPubKey) {
-        String cipherText = new String();
-        for (char c : plainText.toCharArray()) {
-            char cipherChar = encryptChar(c, recipientPubKey);
-            cipherText += Character.toString(cipherChar);
+        try {
+            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+            gen.initialize(1024);
+            KeyPair keyPair = gen.generateKeyPair();
+            publicKey = keyPair.getPublic();
+            privateKey = keyPair.getPrivate();
+        } catch (Exception e) {
         }
-        return cipherText;
+
     }
 
-    public char encryptChar(char c, long[] recipientPubKey) {
-        char cipherChar = (char) (int) (Math.pow(c, recipientPubKey[1]) % recipientPubKey[0]);
-        return cipherChar;
+    public String encryptMessage(String message, PublicKey pubKey) {
+        try {
+            byte[] msgAsBytes = message.getBytes();
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+            byte[] cipherText = cipher.doFinal(msgAsBytes);
+            return bytesToString(cipherText);
+        } catch (Exception e) {
+        }
+        return null;
     }
 
-    public long[] getPublicKey() {
-        return publicKey;
+    public String bytesToString(byte[] byteMsg) {
+        return Base64.getEncoder().encodeToString(byteMsg);
     }
 
-    public void generateKeyPair() {
-        // generate public
-        p = randomPrime(); q = randomPrime(); k = randomPrime();
-        n = p*q;
-        publicKey[0] = n; publicKey[1] = k;
-        this.privateKey = generatePrivateKey();
-    }
-
-    public long randomPrime() {
-        BigInteger prime = BigInteger.probablePrime(15, new Random());
-        return prime.longValue();
-    }
     
-    public long generatePrivateKey() {
-        // our private key is the modular multiplicative inverse of k under modulo phi(n)
-        long phiN = (p-1)*(q-1);
-        for (long i = 1; i < phiN; i++) {
-            if (((k % phiN) * (i % phiN)) % phiN == 1) {
-                return i;
-            }
-        }
-        return 1L;
-    }
-
     public String decryptMessage(String cipherText) {
-        String plainText = "";
-        for (char c : cipherText.toCharArray()) {
-            char plainChar = decryptChar(c);
-            plainText += Character.toString(plainChar);
+        try {
+            byte[] msgAsBytes = stringToBytes(cipherText);
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, this.privateKey);
+            byte[] plainText = cipher.doFinal(msgAsBytes);
+            return new String(plainText, "UTF8");
+        } catch (Exception e) {
         }
-        return plainText;
+        return null;
     }
 
-    public char decryptChar(char c) {
-        char plainChar = Math.pow((double) ((int) c), privateKey);
+    public byte[] stringToBytes(String cipherText) {
+        return Base64.getDecoder().decode(cipherText);
     }
+
+    public PublicKey getPublicKey() {
+        return this.publicKey;
+    }
+
+/* 
+    public static void main(String[] args) {
+        try {
+            Encrypt e1 = new Encrypt();
+            System.out.println(e1.getPublicKey());
+            String plainText = "Hello World";
+            String cipherText = e1.encryptMessage(plainText, e1.getPublicKey());
+            //System.out.println("Cipher text is " + cipherText);
+            String decryptedMessage = e1.decryptMessage(cipherText);
+            //System.out.println("Plain text is " + decryptedMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+*/
+
 }

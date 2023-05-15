@@ -42,6 +42,7 @@ public class Server implements Runnable {
             chatServer = new ServerSocket(9999);
             while (!endChat) {
                 Socket client = chatServer.accept();
+                System.out.println("We accepted a new client");
                 ClientHandler cHandler = new ClientHandler(client);
                 clients.add(cHandler);
                 threadPool.execute(cHandler);
@@ -164,6 +165,7 @@ public class Server implements Runnable {
             // sets up key collection 
             try {
                 //convert server public key to string
+                System.out.println("Beginning set up");
                 byte[] encodedServerPubKey = publicKey.getEncoded();
                 String serverPubKeyAsString = Base64.getEncoder().encodeToString(encodedServerPubKey);
                 out.println("/serverKey ");

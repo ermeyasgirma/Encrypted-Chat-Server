@@ -20,16 +20,14 @@ public class Client implements Runnable {
     private PublicKey publicKey;
     private SimpleDateFormat formatter;  
     private Date date;
-    private InputStream viewerInput; 
     
 
-    public Client(InputStream i) {
+    public Client() {
         closeConnection = false;
         encryptor = new Encrypt();
         publicKey = encryptor.getPublicKey();
         formatter = new SimpleDateFormat("HH:mm");
         date = new Date();
-        viewerInput = i; 
     }
 
     public void setServerPublicKey(PublicKey serverPublicKey) {
@@ -54,37 +52,18 @@ public class Client implements Runnable {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 
-            InputHandler iHandler = new InputHandler(viewerInput);
-            Thread t = new Thread(iHandler);
-            t.start();
+            //InputHandler iHandler = new InputHandler();
+            //Thread t = new Thread(iHandler);
+            //t.start();
 
-            /* 
-            String msgFromServer;
-
-            while ((msgFromServer = in.readLine()) != null) {
-                String decrypted = decrypt(msgFromServer);
-                System.out.println("Decrypted is " + decrypted);
-                if (msgFromServer.startsWith("/serverKey")) {
-                    String stringPublicKey  = in.readLine();
-                    byte[] serverkeyAsArray = Base64.getDecoder().decode(stringPublicKey);
-                    KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-                    // do clientInstance.setServerPublicKey(serverPubkey)
-                    PublicKey serverPubKey = keyFactory.generatePublic(new X509EncodedKeySpec(serverkeyAsArray));
-                    setServerPublicKey(serverPubKey);
-                    // convert our public key to string then send to server
-                    byte[] keyAsArray = publicKey.getEncoded();
-                    out.println(Base64.getEncoder().encodeToString(keyAsArray));
-                } else {
-                    System.out.println(decrypted);
-                    //viewer.showMessage(decrypted);
-
-                }
-            }
-            */
         } catch (Exception e) {
             close();
         }
 
+    }
+
+    public String encrypt(String s) {
+        return encryptor.encryptMessage(s, serverPubKey);
     }
 
     public String decrypt(String s) {
@@ -105,20 +84,15 @@ public class Client implements Runnable {
 
 
     class InputHandler implements Runnable {
-        private InputStream istream;
-
-        public InputHandler(InputStream i) {
-            istream = i;
-        }
-
-        private BufferedReader inputReader;
-
+        private Scanner inputReader;
         public void run () {
+            System.out.println("We at least begin running ");
             try {
-                inputReader = new BufferedReader(new InputStreamReader(istream));
                 while (!closeConnection) {
-                    String msg = inputReader.readLine();
-                    System.out.println(msg);
+                    inputReader = new Scanner(System.in);
+                    System.out.println("We enter the while loop to check scanner input");
+                    String msg = inputReader.next();
+                    System.out.println("The user input read in is " + msg);
                     if (msg.equals("/exit")) {
                         out.println(encrypt("/exit"));
                         inputReader.close();
@@ -128,14 +102,11 @@ public class Client implements Runnable {
                     }
                 }
             } catch (Exception e) {
+                System.out.println("While loop throws an exception ");
                 close();
             }
+            System.out.println("We leave the run method now ");
         }
-
-        public String encrypt(String s) {
-            return encryptor.encryptMessage(s, serverPubKey);
-        }
-
         
     }
 

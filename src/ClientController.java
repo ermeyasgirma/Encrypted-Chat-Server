@@ -18,21 +18,21 @@ public class ClientController {
      */
 
     public static void main(String[] args) {
-        //ChatViewer viewer = new ChatViewer();
-        //viewer.setVisible(true);
-        //Client c1 = new Client(viewer.getUserInput());
-        Client c1 = new Client(System.in);
+        Client c1 = new Client();
         c1.run();
         BufferedReader in = c1.getIn();
         PrintWriter out = c1.getOut();
         PublicKey publicKey = c1.getPublicKey();
+        ChatViewer viewer = new ChatViewer(c1);
+        viewer.setVisible(true);
         try {
             String msgFromServer;
 
             while ((msgFromServer = in.readLine()) != null) {
                 String decrypted = c1.decrypt(msgFromServer);
                 if (msgFromServer.startsWith("/serverKey")) {
-                    String stringPublicKey  = in.readLine();
+                    String[] msgSplit = msgFromServer.split(" ", 2);
+                    String stringPublicKey  = msgSplit[1];
                     byte[] serverkeyAsArray = Base64.getDecoder().decode(stringPublicKey);
                     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                     // do clientInstance.setServerPublicKey(serverPubkey)
@@ -40,15 +40,17 @@ public class ClientController {
                     c1.setServerPublicKey(serverPubKey);
                     // convert our public key to string then send to server
                     byte[] keyAsArray = publicKey.getEncoded();
-                    out.println(Base64.getEncoder().encodeToString(keyAsArray));
+                    String clientKeyString = Base64.getEncoder().encodeToString(keyAsArray);
+                    out.println(clientKeyString);
                 } else {
-                    System.out.println(decrypted);
-                    //viewer.showMessage(decrypted);
-
+                    System.out.println("Received from server: " + decrypted);
+                    viewer.showMessage(decrypted);
                 }
             }
         } catch (Exception e) {
-            // ignore
+            System.out.println("Closing connection");
+            c1.close();
+            System.exit(0);
         }
     }
 }

@@ -156,6 +156,7 @@ public class Server implements Runnable {
 
 
             } catch(IOException exception) {
+                System.out.println("Run is an impostor");
                 closeConnection();
                 exception.printStackTrace();
             }
@@ -168,14 +169,21 @@ public class Server implements Runnable {
                 System.out.println("Beginning set up");
                 byte[] encodedServerPubKey = publicKey.getEncoded();
                 String serverPubKeyAsString = Base64.getEncoder().encodeToString(encodedServerPubKey);
-                out.println("/serverKey ");
-                out.println(serverPubKeyAsString);
+                out.println("/serverKey " + serverPubKeyAsString);
+                System.out.println("We send the server key to client " + serverPubKeyAsString);
                 // convert clients public key string to public key type
+                StringBuilder sb = new StringBuilder();
                 String clientPubKeyString = in.readLine();
+                sb.append(clientPubKeyString);
+                String s = sb.toString();
+                System.out.println("We also receive clients public key " + s);
+                // since the clientPubKeyString is null decoding it throws a null pointer exception
                 byte[] clientPubKeyBytes = Base64.getDecoder().decode(clientPubKeyString);
                 KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                 clientPubKey = keyFactory.generatePublic(new X509EncodedKeySpec(clientPubKeyBytes));
+                System.out.println("Reconstructed clients public key");
                 clientToPubKey.put(this, clientPubKey);
+                System.out.println("We tell the client to enter a username");
                 out.println(encrypt("Please enter a username, with no spaces:", clientPubKey));
                 verifyUsername();
                 nameToConnection.put(username, this);
@@ -183,6 +191,9 @@ public class Server implements Runnable {
                 broadcastMessage(username + " has joined the chat");
 
             } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Set up is an impostor");
+                System.exit(0);
                 closeConnection();
             }
         }
@@ -200,6 +211,7 @@ public class Server implements Runnable {
                 }
                 username = tempName;
             } catch (Exception e) {
+                System.out.println("Verify username is an impostor");
                 closeConnection();
                 e.printStackTrace();
             }

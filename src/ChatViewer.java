@@ -1,6 +1,8 @@
 import java.io.InputStream;
 import java.io.*;
 import java.nio.charset.*;
+import java.util.Scanner;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.GridBagLayout;
@@ -8,18 +10,20 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class ChatViewer extends JFrame {
-    private InputStream userInput;
-
     private JSplitPane splitPane;
     private JPanel top;
     private JPanel bottom;
     private JPanel bottomPanel;
     private JScrollPane scrollChat;
-    private JPanel chatPanel;
+    private JTextArea chatPanel;
     private JTextField userText;
     private JButton send;
+    private PrintWriter clientOutputStream;
+    private Client c;
 
-    public ChatViewer() {
+    public ChatViewer(Client c) {
+        this.c = c;
+        this.clientOutputStream = c.getOut();
         setTitle("Encrypted Chat Server");
         setLocationRelativeTo(null);
         splitPane = new JSplitPane();
@@ -27,17 +31,15 @@ public class ChatViewer extends JFrame {
         bottom = new JPanel();
         bottomPanel = new JPanel();
         scrollChat = new JScrollPane();
-        chatPanel = new JPanel();
-        JLabel r = new JLabel();
-        r.setText("Hello World");
-        //chatPanel.add(r);
+        chatPanel = new JTextArea();
         userText = new JTextField();
-        userText.addActionListener(new GUIInputHandler());
-        userInput = new ByteArrayInputStream(userText.getText().getBytes(Charset.forName("UTF-8")));
+        userText.addActionListener(
+            new GUIInputHandler()
+        );
         send = new JButton("send");
-        //send.addActionListener(
-        //    new GUIInputHandler()
-        //);
+        send.addActionListener(
+            new GUIInputHandler()
+        );
 
         setSize(500, 500);
         getContentPane().setLayout(new GridLayout());
@@ -61,27 +63,15 @@ public class ChatViewer extends JFrame {
     public class GUIInputHandler implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {
-            //String textInput = userText.getText();
-            //JLabel newL = new JLabel();
-            //newL.setText(textInput);
-            //chatPanel.add(newL);
-            //chatPanel.validate();
+            String textInput = userText.getText();
             userText.setText("");
-            //byte[] inputAsArr = textInput.getBytes();
+            ByteArrayInputStream bais = new ByteArrayInputStream(textInput.getBytes());
+            clientOutputStream.println(c.encrypt(textInput));
         }
     }
 
-    public InputStream getUserInput() {
-        return userInput;
-    }
-    public static void main(String[] args) {
-        //new ChatViewer().setVisible(true);
-    }    
-
     public void showMessage(String message) {
-        JLabel msg = new JLabel();
-        msg.setText(message);
-        chatPanel.add(msg);
+        chatPanel.append(message + "\n");
         chatPanel.validate();
     }
 

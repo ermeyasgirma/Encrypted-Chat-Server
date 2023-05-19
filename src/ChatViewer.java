@@ -49,6 +49,7 @@ public class ChatViewer extends JFrame {
         top.add(scrollChat);
         scrollChat.setViewportView(chatPanel);
         chatPanel.setBackground(Color.GREEN);
+        chatPanel.setEditable(false);
 
         bottom.add(bottomPanel);
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));

@@ -8,8 +8,6 @@ import java.text.*;
 import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 
-// add time stamps to messages
-
 public class Server implements Runnable {
     private ServerSocket chatServer;
     private List<ClientHandler> clients;
@@ -155,7 +153,6 @@ public class Server implements Runnable {
 
 
             } catch(IOException exception) {
-                System.out.println("Run is an impostor");
                 closeConnection();
                 exception.printStackTrace();
             }
@@ -179,7 +176,7 @@ public class Server implements Runnable {
                 verifyUsername();
                 nameToConnection.put(username, this);
                 System.out.println(username + " has connected");
-                broadcastMessage(username + " has joined the chat");
+                broadcastMessage(username + " has joined the chat" + " (" + formatter.format(date) + ")");
 
             } catch (Exception e) {
                 e.printStackTrace();

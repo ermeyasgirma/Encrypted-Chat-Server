@@ -82,7 +82,7 @@ public class Client implements Runnable {
         }
     }
 
-
+/* 
     class InputHandler implements Runnable {
         private Scanner inputReader;
         public void run () {
@@ -109,6 +109,7 @@ public class Client implements Runnable {
         }
         
     }
+*/
 
     public static void main(String[] args) {
         //Client client = new Client();

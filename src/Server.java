@@ -42,14 +42,13 @@ public class Server implements Runnable {
             chatServer = new ServerSocket(9999);
             while (!endChat) {
                 Socket client = chatServer.accept();
-                System.out.println("We accepted a new client");
                 ClientHandler cHandler = new ClientHandler(client);
                 clients.add(cHandler);
                 threadPool.execute(cHandler);
             }
         } catch (IOException e) {
             closeServer();
-            System.out.println(e.getStackTrace());
+            e.printStackTrace();
         }
     }
 
@@ -116,7 +115,6 @@ public class Server implements Runnable {
                 setUp();
                 String message;
                 while ((message = decrypt(in.readLine())) != null) {
-                    System.out.println("Current message is " + message);
                     if (message.startsWith("/name")) {
                         String[] splitMsg = message.split(" ", 2);
                         if (splitMsg.length != 2) {
@@ -146,6 +144,7 @@ public class Server implements Runnable {
                             // then re-encrypt it with our own public key and send it to the recipient
                             String privMsg = splitMsg[2];
                             System.out.println(username + " -> " + recipientName + " " + privMsg);
+                            out.println(encrypt(username + "(to " + recipientName + ")" + "(" + formatter.format(date) + ")" + ":" + privMsg , clientPubKey));
                             recipient.getWriter().println(encyptPriv(username + " (direct message): " + privMsg, recipientPubKey));
                         }
                     } else {
@@ -166,24 +165,16 @@ public class Server implements Runnable {
             // sets up key collection 
             try {
                 //convert server public key to string
-                System.out.println("Beginning set up");
                 byte[] encodedServerPubKey = publicKey.getEncoded();
                 String serverPubKeyAsString = Base64.getEncoder().encodeToString(encodedServerPubKey);
                 out.println("/serverKey " + serverPubKeyAsString);
-                System.out.println("We send the server key to client " + serverPubKeyAsString);
                 // convert clients public key string to public key type
-                StringBuilder sb = new StringBuilder();
                 String clientPubKeyString = in.readLine();
-                sb.append(clientPubKeyString);
-                String s = sb.toString();
-                System.out.println("We also receive clients public key " + s);
                 // since the clientPubKeyString is null decoding it throws a null pointer exception
                 byte[] clientPubKeyBytes = Base64.getDecoder().decode(clientPubKeyString);
                 KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                 clientPubKey = keyFactory.generatePublic(new X509EncodedKeySpec(clientPubKeyBytes));
-                System.out.println("Reconstructed clients public key");
                 clientToPubKey.put(this, clientPubKey);
-                System.out.println("We tell the client to enter a username");
                 out.println(encrypt("Please enter a username, with no spaces:", clientPubKey));
                 verifyUsername();
                 nameToConnection.put(username, this);
@@ -192,7 +183,6 @@ public class Server implements Runnable {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                System.out.println("Set up is an impostor");
                 System.exit(0);
                 closeConnection();
             }
@@ -211,7 +201,6 @@ public class Server implements Runnable {
                 }
                 username = tempName;
             } catch (Exception e) {
-                System.out.println("Verify username is an impostor");
                 closeConnection();
                 e.printStackTrace();
             }

@@ -1,11 +1,6 @@
-import java.io.InputStream;
 import java.io.*;
-import java.nio.charset.*;
-import java.util.Scanner;
-
 import javax.swing.*;
 import java.awt.*;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -53,6 +48,7 @@ public class ChatViewer extends JFrame {
         top.setLayout(new BoxLayout(top,  BoxLayout.Y_AXIS));
         top.add(scrollChat);
         scrollChat.setViewportView(chatPanel);
+        chatPanel.setBackground(Color.GREEN);
 
         bottom.add(bottomPanel);
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
@@ -65,8 +61,11 @@ public class ChatViewer extends JFrame {
         public void actionPerformed(ActionEvent e) {
             String textInput = userText.getText();
             userText.setText("");
-            ByteArrayInputStream bais = new ByteArrayInputStream(textInput.getBytes());
             clientOutputStream.println(c.encrypt(textInput));
+            if (textInput.equals("/exit")) {
+                setVisible(false);
+                System.exit(0);
+            }
         }
     }
 
